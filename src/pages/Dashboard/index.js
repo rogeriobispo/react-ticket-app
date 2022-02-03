@@ -4,6 +4,7 @@ import Title from '../../components/Title'
 import { FiMessageCircle } from 'react-icons/fi'
 import { FiPlus, FiSearch, FiEdit2 } from 'react-icons/fi'
 import { Link } from 'react-router-dom'
+import { format } from 'date-fns'
 
 
 import './dashboard.css';
@@ -18,18 +19,34 @@ function Dashboard() {
   const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(async () => {
-    const tickets = await loadChamados()
+    const ticketsLoaded = await loadChamados()
+    setTickets(updateState(ticketsLoaded))
     console.log(tickets)
   },[])
 
+  function updateState(ticketsCollections) {
+  if(ticketsCollections.length === 0) return
+    const listTickets = []
+
+    ticketsCollections.forEach(ticket => {
+      listTickets.push({
+        id: ticket.id,
+        ...ticket.data(),
+        createdAtFormated: format(ticket.data().createdAt.toDate(), 'dd/MM/yyyy')
+      })
+    })
+
+    return listTickets
+  }
+
   async function loadChamados() {
     try{
-
+      return listRef.limit(5).get();
     } catch(error) {
       console.log(error)
       setLoadingMore(false)
     }
-    return listRef.limit(5).get();
+    setLoading(false)
   }
   return (
     <>
@@ -57,27 +74,31 @@ function Dashboard() {
                   <th scope='col'>Cliente</th>
                   <th scope='col'>Assunto</th>
                   <th scope='col'>Status</th>
-                  <th scope='col'>6dastrado em</th>
+                  <th scope='col'>Cadastrado em</th>
                   <th scope='col'>#</th>
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td data-label='cliente'>Sujeito</td>
-                  <td data-label='assunto'>suporte</td>
-                  <td data-label='status'>
-                    <span className='badge' style={{ backgroundColor: '#5cb85c'}}>Aberto</span>
-                  </td>
-                  <td data-label='cadastrado'>20/10/2020</td>
-                  <td data-label='#'>
-                    <button className='action' style={{ backgroundColor: '#3583f6'}}>
-                      <FiSearch size={17} color='#fff'/>
-                    </button>
-                    <button className='action' style={{ backgroundColor: '#f6a935'}}>
-                      <FiEdit2 size={17} color='#fff'/>
-                    </button>
-                  </td>
-                </tr>
+                {tickets.map(ticket => (
+                  
+                    <tr key={ticket.id}>
+                      {console.log(ticket)}
+                      <td data-label='cliente'>{ticket.customerName}</td>
+                      <td data-label='assunto'>{ticket.assunto}</td>
+                      <td data-label='status'>
+                        <span className='badge' style={{ backgroundColor: '#5cb85c'}}>{ticket.status}</span>
+                      </td>
+                      <td data-label='cadastrado'>{ticket.createdAtFormated}</td>
+                      <td data-label='#'>
+                        <button className='action' style={{ backgroundColor: '#3583f6'}}>
+                          <FiSearch size={17} color='#fff'/>
+                        </button>
+                        <button className='action' style={{ backgroundColor: '#f6a935'}}>
+                          <FiEdit2 size={17} color='#fff'/>
+                        </button>
+                      </td>
+                    </tr>
+                ))}
               </tbody>
             </table>
           </>
