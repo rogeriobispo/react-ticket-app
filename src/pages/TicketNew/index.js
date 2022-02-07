@@ -1,4 +1,5 @@
 import { useState, useContext, useEffect } from 'react'
+import { useHistory, useParams } from 'react-router-dom'
 import { FiPlus } from 'react-icons/fi'
 import { toast } from 'react-toastify'
 import { authContext } from '../../context/auth';
@@ -9,12 +10,15 @@ import './ticketNew.css';
 
 function TicketNew(){
   const { currentUser } = useContext(authContext);
+  const history = useHistory();
+  const { id } = useParams();
 
   const [customers, setCustomers] = useState([]);
   const [customerId, setCustomerId] = useState(0);
   const [assunto, setAssunto] = useState('Suporte');
   const [status, setStatus] = useState('Aberto');
   const [complemento, setComplemento] = useState('');
+  const [edit, setEdit] = useState(false);
 
   useEffect(async () => {
     const customerList = await firebase.firestore().collection('customers').get()
@@ -31,31 +35,53 @@ function TicketNew(){
     }
 
     setCustomers(customerArray);
+
+    if(id){
+      try{
+        const ticket = await firebase.firestore().collection('tickets').doc(id).get();      setAssunto(ticket.data().assunto);
+        setStatus(ticket.data().status);
+        setComplemento(ticket.data().complemento);
+  
+        const customerIndex = customerArray.findIndex(customer => customer.id === ticket.data().customerId);
+        setCustomerId(customerIndex);
+        setEdit(true);
+
+      } catch(erro) {
+        toast.error('Erro ao carregar o ticket');
+        setEdit(false);
+      }
+    }
     
-  }, [setCustomers])
+  }, [setCustomers, id])
 
   async function handleSubmit(e){
     e.preventDefault();
-
     const ticket = {
       customerId: customers[customerId].id,
       customerName: customers[customerId].name,
       assunto,
       status,
       complemento,
-      userId: currentUser.uid,
-      createdAt: new Date(),  
+      userId: currentUser.uid,  
     }
-    try{
-      await firebase.firestore().collection('tickets').add(ticket)
-      toast.success('Chamado cadastrado com sucesso ')
-      setComplemento('');
-      setCustomerId(0);
-      setAssunto('Suporte');
-      setStatus('Aberto');
-    } catch(error) {
-      toast.error('Erro ao cadastrar chamado')
+
+    if(edit) {
+      await firebase.firestore().collection('tickets').doc(id).update({...ticket, updateAt: new Date(),}) 
+      toast.success('Ticket atualizado com sucesso');
+    } else {
+      try{
+        await firebase.firestore().collection('tickets').add({...ticket, createdAt: new Date(),})
+        toast.success('Chamado cadastrado com sucesso ')
+        setComplemento('');
+        setCustomerId(0);
+        setAssunto('Suporte');
+        setStatus('Aberto');
+      } catch(error) {
+        toast.error('Erro ao cadastrar chamado')
+      }
     }
+    history.push('/dashboard');
+    
   }
   return(
     <>

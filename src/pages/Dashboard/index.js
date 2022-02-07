@@ -108,9 +108,9 @@ function Dashboard() {
                         <button className='action' style={{ backgroundColor: '#3583f6'}} onClick={() => toggleModal(ticket)}>
                           <FiSearch size={17} color='#fff'/>
                         </button>
-                        <button className='action' style={{ backgroundColor: '#f6a935'}}>
+                        <Link to={`new-ticket/${ticket.id}`}className='action' style={{ backgroundColor: '#f6a935'}}>
                           <FiEdit2 size={17} color='#fff'/>
-                        </button>
+                        </Link>
                       </td>
                     </tr>
                 ))}
