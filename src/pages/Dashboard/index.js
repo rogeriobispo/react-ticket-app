@@ -5,6 +5,7 @@ import { FiMessageCircle } from 'react-icons/fi'
 import { FiPlus, FiSearch, FiEdit2 } from 'react-icons/fi'
 import { Link } from 'react-router-dom'
 import { format } from 'date-fns'
+import Modal from '../../components/Modal'
 
 
 import './dashboard.css';
@@ -17,13 +18,22 @@ function Dashboard() {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [lastDoc, setLastDoc] = useState();
+
+  const [showModal, setShowModal] = useState(false);
+  const [detail, setDetail] = useState();
+
 
   useEffect(async () => {
     const ticketsLoaded = await loadChamados()
-    setTickets(updateState(ticketsLoaded))
-    console.log(tickets)
+    updateState(ticketsLoaded)
+    
   },[])
 
+  function toggleModal(ticket) {
+    setDetail(ticket)
+    setShowModal(!showModal)
+  }
   function updateState(ticketsCollections) {
   if(ticketsCollections.length === 0) return
     const listTickets = []
@@ -35,8 +45,12 @@ function Dashboard() {
         createdAtFormated: format(ticket.data().createdAt.toDate(), 'dd/MM/yyyy')
       })
     })
+    
+    setLastDoc(listTickets[listTickets.length - 1])
 
-    return listTickets
+    setTickets(tickets => [...tickets, ...listTickets])
+
+    setLoadingMore(false)
   }
 
   async function loadChamados() {
@@ -48,6 +62,7 @@ function Dashboard() {
     }
     setLoading(false)
   }
+
   return (
     <>
       <Header/>
@@ -90,7 +105,7 @@ function Dashboard() {
                       </td>
                       <td data-label='cadastrado'>{ticket.createdAtFormated}</td>
                       <td data-label='#'>
-                        <button className='action' style={{ backgroundColor: '#3583f6'}}>
+                        <button className='action' style={{ backgroundColor: '#3583f6'}} onClick={() => toggleModal(ticket)}>
                           <FiSearch size={17} color='#fff'/>
                         </button>
                         <button className='action' style={{ backgroundColor: '#f6a935'}}>
@@ -104,6 +119,13 @@ function Dashboard() {
           </>
         )}
       </div>
+
+      {showModal && (
+      <Modal
+        content={detail}
+        close={toggleModal}
+      />
+      )}
     </>
   );
 }
